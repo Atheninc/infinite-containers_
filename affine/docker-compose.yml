@@ -38,13 +38,16 @@ services:
     labels:
       - "traefik.enable=true"
 
+      # ✅ IMPORTANT: force Traefik à utiliser CE réseau pour joindre le conteneur
+      - "traefik.docker.network=b0ne_site_default"
+
       # Router (nom unique)
       - "traefik.http.routers.affine-adetena.rule=Host(`affine.adetena.com`)"
       - "traefik.http.routers.affine-adetena.entrypoints=websecure"
       - "traefik.http.routers.affine-adetena.tls.certresolver=myresolver"
       - "traefik.http.routers.affine-adetena.service=affine-adetena-svc"
 
-      # Service (nom unique) + port + scheme forcé
+      # Service (nom unique) + port + scheme
       - "traefik.http.services.affine-adetena-svc.loadbalancer.server.port=3010"
       - "traefik.http.services.affine-adetena-svc.loadbalancer.server.scheme=http"
 
