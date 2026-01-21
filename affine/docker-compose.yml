@@ -8,8 +8,6 @@ services:
 
     # (optionnel) tu peux laisser pour tester, puis retirer après
     ports:
-      - "3010:3010"
-      - "5555:5555"
 
     depends_on:
       redis:
