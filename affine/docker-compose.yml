@@ -7,7 +7,6 @@ services:
     command: ['sh', '-c', 'node ./scripts/self-host-predeploy && node ./dist/index.js']
 
     # (optionnel) tu peux laisser pour tester, puis retirer après
-    ports:
 
     depends_on:
       redis:
