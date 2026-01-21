@@ -3,10 +3,7 @@ version: "3.8"
 services:
   affine:
     image: ghcr.io/toeverything/affine-graphql:stable
-    # ✅ pas de container_name pour éviter conflit avec l’ancienne stack
-    command: ['sh', '-c', 'node ./scripts/self-host-predeploy && node ./dist/index.js']
-
-    # (optionnel) tu peux laisser pour tester, puis retirer après
+    command: ["sh", "-c", "node ./scripts/self-host-predeploy && node ./dist/index.js"]
 
     depends_on:
       redis:
@@ -40,10 +37,16 @@ services:
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.affine.rule=Host(`affine.adetena.com`)"
-      - "traefik.http.routers.affine.entrypoints=websecure"
-      - "traefik.http.routers.affine.tls.certresolver=myresolver"
-      - "traefik.http.services.affine.loadbalancer.server.port=3010"
+
+      # Router (nom unique)
+      - "traefik.http.routers.affine-adetena.rule=Host(`affine.adetena.com`)"
+      - "traefik.http.routers.affine-adetena.entrypoints=websecure"
+      - "traefik.http.routers.affine-adetena.tls.certresolver=myresolver"
+      - "traefik.http.routers.affine-adetena.service=affine-adetena-svc"
+
+      # Service (nom unique) + port + scheme forcé
+      - "traefik.http.services.affine-adetena-svc.loadbalancer.server.port=3010"
+      - "traefik.http.services.affine-adetena-svc.loadbalancer.server.scheme=http"
 
   redis:
     image: redis
