@@ -1,37 +1,50 @@
 version: "3.8"
+
 services:
   affine:
     image: ghcr.io/toeverything/affine-graphql:stable
     container_name: affine_selfhosted
     command:
       ['sh', '-c', 'node ./scripts/self-host-predeploy && node ./dist/index.js']
+
+    # ⚠️ Tu peux laisser les ports pour le premier déploiement
+    # Traefik fonctionnera même avec
     ports:
-      - '3010:3010'
-      - '5555:5555'
+      - "3010:3010"
+      - "5555:5555"
+
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
+
     volumes:
       - ./data/config:/root/.affine/config
       - ./data/storage:/root/.affine/storage
-    logging:
-      driver: 'json-file'
-      options:
-        max-size: '1000m'
+
     restart: unless-stopped
+
     environment:
-      - NODE_OPTIONS="--import=./scripts/register.js"
-      - AFFINE_CONFIG_PATH=/root/.affine/config
-      - REDIS_SERVER_HOST=redis
-      - DATABASE_URL=postgres://affine:affine@postgres:5432/affine
-      - NODE_ENV=production
-      - AFFINE_ADMIN_EMAIL=${AFFINE_ADMIN_EMAIL}
-      - AFFINE_ADMIN_PASSWORD=${AFFINE_ADMIN_PASSWORD}
-      # Telemetry allows us to collect data on how you use the affine. This data will helps us improve the app and provide better features.
-      # Uncomment next line if you wish to quit telemetry.
-      # - TELEMETRY_ENABLE=false
+      NODE_OPTIONS: "--import=./scripts/register.js"
+      AFFINE_CONFIG_PATH: /root/.affine/config
+      REDIS_SERVER_HOST: redis
+      DATABASE_URL: postgres://affine:affine@postgres:5432/affine
+      NODE_ENV: production
+      AFFINE_ADMIN_EMAIL: ${AFFINE_ADMIN_EMAIL}
+      AFFINE_ADMIN_PASSWORD: ${AFFINE_ADMIN_PASSWORD}
+
+    networks:
+      - default
+      - traefik-network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.affine.rule=Host(`affine.adetena.com`)"
+      - "traefik.http.routers.affine.entrypoints=websecure"
+      - "traefik.http.routers.affine.tls.certresolver=myresolver"
+      - "traefik.http.services.affine.loadbalancer.server.port=3010"
+
   redis:
     image: redis
     container_name: affine_redis
@@ -39,10 +52,11 @@ services:
     volumes:
       - ./data/redis:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+
   postgres:
     image: postgres
     container_name: affine_postgres
@@ -50,7 +64,7 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U affine']
+      test: ["CMD-SHELL", "pg_isready -U affine"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,3 +73,8 @@ services:
       POSTGRES_PASSWORD: affine
       POSTGRES_DB: affine
       PGDATA: /var/lib/postgresql/data/pgdata
+
+networks:
+  traefik-network:
+    external: true
+    name: b0ne_site_default
