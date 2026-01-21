@@ -3,12 +3,10 @@ version: "3.8"
 services:
   affine:
     image: ghcr.io/toeverything/affine-graphql:stable
-    container_name: affine_selfhosted
-    command:
-      ['sh', '-c', 'node ./scripts/self-host-predeploy && node ./dist/index.js']
+    # ✅ pas de container_name pour éviter conflit avec l’ancienne stack
+    command: ['sh', '-c', 'node ./scripts/self-host-predeploy && node ./dist/index.js']
 
-    # ⚠️ Tu peux laisser les ports pour le premier déploiement
-    # Traefik fonctionnera même avec
+    # (optionnel) tu peux laisser pour tester, puis retirer après
     ports:
       - "3010:3010"
       - "5555:5555"
@@ -20,8 +18,13 @@ services:
         condition: service_healthy
 
     volumes:
-      - ./data/config:/root/.affine/config
-      - ./data/storage:/root/.affine/storage
+      - /data/compose/63/affine/data/config:/root/.affine/config
+      - /data/compose/63/affine/data/storage:/root/.affine/storage
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1000m"
 
     restart: unless-stopped
 
@@ -47,10 +50,9 @@ services:
 
   redis:
     image: redis
-    container_name: affine_redis
     restart: unless-stopped
     volumes:
-      - ./data/redis:/data
+      - /data/compose/63/affine/data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
@@ -59,10 +61,9 @@ services:
 
   postgres:
     image: postgres
-    container_name: affine_postgres
     restart: unless-stopped
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - /data/compose/63/affine/data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U affine"]
       interval: 10s
